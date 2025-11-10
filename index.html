@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Shortest Route Map</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+  #map {
+    height: 100vh;
+    width: 100%;
+  }
+
+  #clearBtn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid #444;
+    cursor: pointer;
+    z-index: 1000;
+  }
+</style>
+</head>
+
+<body>
+
+<button id="clearBtn" onclick="location.reload()">Clear Map</button>
+<div id="map"></div>
+
+<script>
+    // Initialize map
+    var map = L.map('map').setView([28.7041, 77.1025], 14);
+
+    // Add base map tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(map);
+
+    var startMarker, endMarker, routeLayer;
+
+    // Click event to pick start & end
+    function onMapClick(e) {
+        if (!startMarker) {
+            startMarker = L.marker(e.latlng, {draggable: true}).addTo(map);
+        } else if (!endMarker) {
+            endMarker = L.marker(e.latlng, {draggable: true}).addTo(map);
+
+            getRoute(startMarker.getLatLng(), endMarker.getLatLng());
+        }
+    }
+
+    // map.on('click', onMapClick);
+
+
+    // map.on('click', function(e) {
+    //     console.log(e.latlng); // <- add this
+    // });
+
+    map.on('click', function(e) {
+        console.log("CLICKED!", e.latlng);
+        alert("You clicked at: " + e.latlng.lat + ", " + e.latlng.lng);
+    });
+
+
+    // Function to fetch and display route
+    function getRoute(start, end) {
+        fetch(`/route?lon1=${start.lng}&lat1=${start.lat}&lon2=${end.lng}&lat2=${end.lat}`)
+            .then(r => r.json())
+            .then(data => {
+                if (routeLayer) { map.removeLayer(routeLayer); }
+
+                routeLayer = L.geoJSON(data).addTo(map);
+
+                var coords = data.coordinates || data.features[0].geometry.coordinates;
+                var latlngs = coords.map(c => [c[1], c[0]]);
+                map.fitBounds(latlngs);
+            });
+    }
+</script>
+
+</body>
+</html>
